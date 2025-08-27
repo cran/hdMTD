@@ -1,6 +1,6 @@
-ee70dff2a624b017b638dcc18a58a22b *DESCRIPTION
-8dbf051d3de8c25cab1ef8725e758bbc *LICENSE
+7ddaa7613dcaa1695b98c0b719704549 *DESCRIPTION
 a1ba14a035027849fa2ab585d37a48c9 *NAMESPACE
+645fe0e68a043901b96046cb5344a23c *NEWS.md
 3b1b2a93000078ce21b35aaaf021a9ca *R/MTDest.R
 260456110c4e06a2db37ee57c016f8b5 *R/MTDmodel.R
 f4f2e667845bd2863108137da3bca556 *R/checkSample.R
@@ -22,7 +22,6 @@ e6cbabf05202b0887884d6d165caf7f5 *R/sleepscoring.R
 1553c6c9e06408b2d499d9262404a1b9 *R/testChains.R
 2768ba615c718e33c3956c1ee40f2b0d *R/utils.R
 936c5f451ab1528ff8af21fae864bfd4 *R/validation.R
-452c0f40397daa73c0f89e4cc506b3d5 *README.md
 b54db8794555342c4feee5fe0b1b8f5b *build/partial.rdb
 6388fcdcce36e155b772d02121f792a1 *data/raindata.rda
 24ffe28f63ddf905344cce4eb3596105 *data/sleepscoring.rda
