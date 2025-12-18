@@ -2,20 +2,16 @@
 % Please edit documentation in R/perfectSample.R
 \name{perfectSample}
 \alias{perfectSample}
-\alias{perfectSample.MTD}
 \title{Perfectly samples an MTD Markov chain}
 \usage{
-perfectSample(object, ...)
-
-\method{perfectSample}{MTD}(object, N, ...)
+perfectSample(object, N, ...)
 }
 \arguments{
-\item{object}{An object of class "MTD", see \code{\link[=MTDmodel]{MTDmodel()}} for properly generating}
-
-\item{...}{Additional arguments passed to methods.
-an MTD object.}
+\item{object}{An object of class "MTD" or "MTDest".}
 
 \item{N}{Positive integer. Sample size to generate. Must be > max(Lambda(object)).}
+
+\item{...}{Additional arguments passed to methods.}
 }
 \value{
 Returns a size N sample from an MTD model (the first element is the most recent).

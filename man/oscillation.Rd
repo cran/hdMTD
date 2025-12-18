@@ -13,7 +13,7 @@ oscillation(x, ...)
 \method{oscillation}{default}(x, S, A = NULL, ...)
 }
 \arguments{
-\item{x}{Must be an MTD object or a chain sample.}
+\item{x}{Either an MTD model object, an MTDest fit, or a chain sample.}
 
 \item{...}{Ignored.}
 
@@ -23,27 +23,29 @@ oscillation(x, ...)
 }
 \value{
 A named numeric vector of oscillations. If the \code{x} parameter is
-an MTD object, it will provide the oscillations for each element in \code{Lambda}.
-If \code{x} is a chain sample, it estimates the oscillations for a user-inputted
-set of lags \code{S}.
+an MTD or MTDest object, it will provide the oscillations for each element in
+\code{Lambda} (or \code{S} for MTDest). If \code{x} is a chain sample, it
+estimates the oscillations for a user-inputted set of lags \code{S}.
 }
 \description{
-Calculates the oscillations of an MTD model object or estimates the oscillations of a chain sample.
+Calculates the oscillations of an MTD model object, of an MTDest fit,
+or estimates the oscillations of a chain sample.
 }
 \details{
-For an MTD model, the oscillation for lag \eqn{j}
-( \eqn{ \{ \delta_j:\ j \in \Lambda \} }), is the product of the weight \eqn{\lambda_j}
-multiplied by the maximum of the total variation distance between the distributions in a
-stochastic matrix \eqn{p_j}.
+For an MTD model or an MTDest fit, the oscillation for lag \eqn{j}
+(i.e., \eqn{ \{ \delta_j:\ j \in \Lambda \} } for MTD or \eqn{ \{ \delta_j:\ j \in S \} }
+for MTDest) is the product of the mixture weight \eqn{\lambda_j} and the
+maximum of the total variation distance between the distributions in a
+stochastic matrix \eqn{p_j}. That is,
 \deqn{\delta_j = \lambda_j\max_{b,c \in \mathcal{A}} d_{TV}(p_j(\cdot | b), p_j(\cdot | c)).}
-So, if \code{x} is an MTD object, the parameters \eqn{\Lambda}, \eqn{\mathcal{A}}, \eqn{\lambda_j},
-and \eqn{p_j} are inputted through, respectively, the entries \code{Lambda}, \code{A},
-\code{lambdas} and the list \code{pj} of stochastic matrices. Hence, an oscillation \eqn{\delta_j}
-may be calculated for all \eqn{j \in \Lambda}.
-For estimating the oscillations from a sample, then \code{x} must be a chain,
-and \code{S}, a vector representing a set of lags, must be informed. This way the transition
-probabilities can be estimated.
+When \code{x} is an object of class MTD (or MTDest), the quantities \eqn{\Lambda}
+(or \eqn{S}), \eqn{\mathcal{A}}, \eqn{\lambda_j}, and \eqn{p_j} are directly available.
+In this case, the oscillations can be computed exactly from the model parameters.
 
+Alternatively, when estimating oscillations from data, \code{x} must be a
+realization of a chain and \code{S} must be provided as a candidate lag set.
+The transition probabilities are then estimated from the sample before
+computing the corresponding oscillations.
 Let \eqn{\hat{p}(\cdot| x_S)} symbolize an estimated distribution
 in \eqn{\mathcal{A}} given a certain past \eqn{x_S} ( which is a sequence of
 elements of \eqn{\mathcal{A}} where each element occurred at a lag in \code{S}),
@@ -58,13 +60,14 @@ indexed by \code{S}.
 }
 \section{Methods (by class)}{
 \itemize{
-\item \code{oscillation(MTD)}: For an \code{MTD} object: computes \eqn{\delta_j} for all \eqn{j \in \Lambda}.
+\item \code{oscillation(MTD)}: For an \code{MTD} (or \code{MTDest}) object: computes
+\eqn{\delta_j} for all \eqn{j \in \Lambda} (or for all \eqn{j \in S}).
 
 \item \code{oscillation(default)}: For a chain sample: estimates \eqn{\delta_j} for each \eqn{j} in \code{S}.
 
 }}
 \examples{
-oscillation( MTDmodel(Lambda = c(1, 4), A = c(2, 3) ) )
+oscillation(MTDmodel(Lambda = c(1, 4), A = c(2, 3)))
 oscillation(MTDmodel(Lambda = c(1, 4), A = c(2, 3), lam0 = 0.01, lamj = c(0.49, 0.5),
                       pj = list(matrix(c(0.1, 0.9, 0.9, 0.1), ncol = 2)),
                       single_matrix = TRUE))

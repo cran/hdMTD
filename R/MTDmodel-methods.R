@@ -5,24 +5,17 @@
 #' Transition Distribution (MTD) model objects.
 #'
 #' @details
-#' These methods operate on objects created by \code{\link{MTDmodel}}:
 #' \itemize{
 #'   \item \code{print.MTD()} displays a compact summary of the model:
 #'         the relevant lag set (shown as negative integers) and the state space.
 #'
-#'   \item \code{summary.MTD()} collects the key components of the model into
-#'         a list (class \code{"summary.MTD"}) containing order, lags, state
-#'         space, mixture weights, independent distribution (if present),
-#'         the dimension of the global transition matrix \eqn{P}, and a compact
-#'         preview of its first rows.
+#'   \item \code{summary.MTD()} computes and prints a detailed summary of the
+#'         model, including order, relevant lags, state space, mixture weights,
+#'         the independent distribution (if present), and a compact preview of
+#'         the global transition matrix \eqn{P}.
 #'
-#'   \item \code{print.summary.MTD()} prints that summary in a readable format,
-#'         including lambdas, transition matrices \eqn{p_j}, the independent
-#'         distribution \eqn{p_0} (if present), and a guide for interpreting the
-#'         rows of the global transition matrix \eqn{P}.
-#'
-#'   \item \code{coef.MTD()} extracts the model parameters as a list with
-#'         \code{lambdas}, \code{pj}, and \code{p0}.
+#'   \item \code{coef.MTD()} extracts parameters as a list with \code{lambdas},
+#'   \code{pj}, and \code{p0} (works for \code{c("MTDest","MTD")} objects by inheritance).
 #'
 #'   \item \code{logLik.MTD()} computes the log-likelihood of a sample under the
 #'         model. Since an object of class \code{"MTD"} carries only the model
@@ -32,24 +25,22 @@
 #'         with appropriate attributes.
 #' }
 #'
-#' @param x An object of class \code{"MTD"} or \code{"summary.MTD"},
-#'  depending on the method.
+#' @param x An object of class \code{"MTD"} (for \code{print.MTD(x, ...)}).
 #' @param object An object of class \code{"MTD"}.
 #' @param X A vector or single-column data frame containing an MTD chain sample
-#' (values must be in the model's state space).
+#' (required for \code{logLik.MTD(object, X, ...)}). Values must be in the model's state space.
 #' @param ... Further arguments passed to or from other methods (ignored).
 #'
 #' @return
 #' \describe{
 #'   \item{\code{print.MTD}}{Invisibly returns the \code{"MTD"} object, after
 #'         displaying its relevant lag set and state space.}
-#'   \item{\code{summary.MTD}}{An object of class \code{"summary.MTD"} with fields:
-#'         \code{order}, \code{states}, \code{lags}, \code{indep},
-#'         \code{lambdas}, \code{p0} (or \code{NULL}),
-#'         \code{P_dim}, and \code{P_head}.}
-#'   \item{\code{print.summary.MTD}}{Invisibly returns the
-#'         \code{"summary.MTD"} object after printing its contents.}
-#'   \item{\code{coef.MTD}}{A list with model parameters:
+#'   \item{\code{summary.MTD}}{Invisibly returns a named list with fields:
+#'         \code{call}, \code{order}, \code{Lambda}, \code{states},
+#'         \code{lags}, \code{indep}, \code{lambdas}, \code{pj},
+#'         \code{p0} (or \code{NULL}), \code{P_dim}, and \code{P}. The same
+#'         information is printed to the console in a readable format.}
+#'   \item{\code{coef.MTD}}{A list with parameters:
 #'         \code{lambdas}, \code{pj}, and \code{p0}.}
 #'   \item{\code{logLik.MTD}}{An object of class \code{"logLik"} with attributes
 #'     \code{nobs} (number of transitions) and \code{df} (free parameters),
@@ -58,11 +49,11 @@
 #' }
 #'
 #' @seealso
-#' \code{\link{MTDmodel}}, \code{\link{MTDest}},
+#' \code{\link{MTDmodel}}, \code{\link{MTDest}} for fitted models (note that "MTDest"
+#' objects inherit from "MTD"),
 #' \code{\link{transitP}}, \code{\link{lambdas}}, \code{\link{pj}},
 #' \code{\link{p0}}, \code{\link{lags}}, \code{\link{Lambda}}, \code{\link{states}},
-#' \code{\link{MTDest-methods}},
-#' \code{\link{oscillation}}, \code{\link{perfectSample}},
+#' \code{\link{oscillation}}, \code{\link{perfectSample}}, \code{\link{probs}},
 #' \code{\link[stats]{logLik}}
 #'
 #' @examples
@@ -72,7 +63,7 @@
 #'
 #' print(m)       # compact display: lags (Z^-) and state space
 #' s <- summary(m)
-#' print(s)
+#' str(s)
 #'
 #' coef(m)        # list(lambdas = ..., pj = ..., p0 = ...)
 #' transitP(m)    # global transition matrix P
@@ -96,8 +87,6 @@ print.MTD <- function(x, ...) {
   cat("  Relevant lags: ", fmt_vec(lg), "\n", sep = "")
   cat("  State space (A): ", fmt_vec(A),  "\n", sep = "")
   cat("  Use summary() for full description.\n")
-  cat("  Accessors: transitP(), lambdas(), pj(), p0(), lags(), Lambda(), states().\n")
-  cat("  Methods: coef(), probs(), oscillation(), perfectSample(), logLik(), plot().\n")
   invisible(x)
 }
 
@@ -105,11 +94,11 @@ print.MTD <- function(x, ...) {
 
 #' @exportS3Method summary MTD
 summary.MTD <- function(object, ...) {
-  checkMTD(object)  # robust validation
+  checkMTD(object)  # validation
 
   w   <- lambdas(object)
-  p0 <- p0(object)
-  indep_flag <- (sum(p0) > 0) && (w[1] > 0)
+  p0v <- p0(object)
+  indep_flag <- (sum(p0v) > 0) && (w[1] > 0)
   P <- transitP(object)
 
   out <- list(
@@ -121,48 +110,56 @@ summary.MTD <- function(object, ...) {
     indep   = indep_flag,
     lambdas = w,
     pj      = pj(object),
-    p0      = if (indep_flag) p0 else NULL,
+    p0      = if (indep_flag) p0v else NULL,
     P_dim   = dim(P),
     P       = P
   )
-  class(out) <- "summary.MTD"
-  out
+  print_MTD_summary(out) # prints summary (side effect)
+  invisible(out)
 }
+#' Format and print the MTDmodel summary (internal helper)
+#' @keywords internal
+#' @noRd
+print_MTD_summary <- function(object) {
+  cat("Mixture Transition Distribution (MTD) model\n")
+  if (!is.null(object$call)) {
+    cat("\nCall:\n")
+    print(object$call)
+  }
 
-#' @exportS3Method print summary.MTD
-print.summary.MTD <- function(x, ...) {
-  cat("Mixture Transition Distribution (MTD) model \n")
-  if (!is.null(x$call)) { cat("\nCall:\n"); print(x$call) }
+  cat("\nRelevant lags: ", fmt_vec(object$lags), "\n", sep = "")
+  cat("State space: ", fmt_vec(object$states), "\n", sep = "")
 
-  cat("\nRelevant lags: ", fmt_vec(x$lags), "\n", sep = "")
-  cat("State space: ", fmt_vec(x$states), "\n", sep = "")
+  cat("\nlambdas (weights):\n")
+  print(object$lambdas)
 
-  cat("\nlambdas (weights):\n"); print(x$lambdas)
-
-  if (!is.null(x$p0)) {
-    cat("\nIndependent distribution p0:\n"); print(x$p0)
+  if (!is.null(object$p0)) {
+    cat("\nIndependent distribution p0:\n")
+    print(object$p0)
   }
 
   cat("\nTransition matrices pj (one per lag):\n")
-  for (i in seq_along(x$pj)) {
-    cat(sprintf(" \n pj for lag j = %s:\n", -x$Lambda[i]))
-    print(x$pj[[i]])
+  for (i in seq_along(object$pj)) {
+    cat(sprintf(" \n pj for lag j = %s:\n", -object$Lambda[i]))
+    print(object$pj[[i]])
   }
 
-  cat(sprintf("\nTransition matrix P: %d x %d\n", x$P_dim[1], x$P_dim[2]))
-  cat("- Preview of first rows of P:\n"); print(utils::head(x$P, n = min(6L, nrow(x$P))))
-
-  ## ---- Reading guide for P (right-to-left interpretation) ----
+  cat(sprintf("\nTransition matrix P: %d x %d\n",
+              object$P_dim[1], object$P_dim[2]))
+  cat("- Preview of first rows of P:\n")
+  print(utils::head(object$P, n = min(6L, nrow(object$P))))
 
   cat("\nReading guide for P:\n")
-  if (!is.null(x$Lambda)) {
+  if (!is.null(object$Lambda)) {
     cat("Rows list past contexts from oldest to newest, matching lags ",
-        paste0("(", paste(-sort(x$Lambda, decreasing = TRUE), collapse = ", "), ")"), ".\n", sep = "")
+        paste0("(", paste(-sort(object$Lambda, decreasing = TRUE),
+                          collapse = ", "), ")"), ".\n", sep = "")
   } else {
     cat("Rows list past contexts from oldest to newest.\n")
   }
-  invisible(x)
+  invisible(object)
 }
+
 
 # --------------------------- coef.MTD ----------------------------------
 
@@ -179,7 +176,7 @@ coef.MTD <- function(object, ...) {
 # --------------------------- logLik.MTD ----------------------------------
 
 #' @exportS3Method logLik MTD
-logLik.MTD <- function(object, X,...) {
+logLik.MTD <- function(object, X, ...) {
   checkMTD(object)
   if (missing(X)) {
     stop("Argument X is missing. A sample X must be provided since the log-likelihood is computed from the sample frequencies together with the model parameters stored in the MTD object.")
@@ -210,6 +207,8 @@ logLik.MTD <- function(object, X,...) {
   df <- n_parameters(Lambda = L, A = A,
                      single_matrix = single_matrix,
                      indep_part = indep_part)
-
+        #n_parameters is defined at utils.R
   structure(ll, nobs = nobs, df = df, class = "logLik")
 }
+
+

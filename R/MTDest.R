@@ -55,16 +55,38 @@
 #' @param oscillations Logical. If \code{TRUE}, also compute oscillations for the
 #' fitted model (see \code{\link{oscillation}}).
 #'
+#' @section Methods (S3):
+#' Objects returned by \code{MTDest()} have class \code{c("MTDest","MTD")} and support:
+#' \itemize{
+#'   \item \code{\link[base]{print}} and \code{\link[base]{summary}}: methods for fitted objects
+#'         (see \code{\link{MTDest-methods}}).
+#'   \item \code{\link[stats]{coef}}: extracts fitted parameters \code{lambdas}, \code{pj}, and \code{p0}
+#'         (inherited from \code{"MTD"}; see \code{\link{MTD-methods}}).
+#'   \item \code{\link[stats]{logLik}}: returns the final log-likelihood stored in the fit
+#'         (see \code{\link{MTDest-methods}}).
+#'   \item \code{\link[graphics]{plot}}: diagnostic plots for fitted objects (see \code{\link{plot.MTDest}}).
+#'   \item \code{\link{probs}}, \code{\link{oscillation}}, and \code{\link{perfectSample}}: additional utilities
+#'         available by inheritance from \code{"MTD"}.
+#'   \item \code{\link{as.MTD}}: coerces an \code{"MTDest"} fit to an \code{"MTD"} model.
+#' }
+#'
+#' @section Accessors:
+#' Stable access to fitted components is provided by \code{\link{MTD-accessors}}, including
+#' \code{\link{S}} (or \code{\link{Lambda}}), \code{\link{lags}}, \code{\link{lambdas}},
+#' \code{\link{pj}}, \code{\link{p0}}, \code{\link{states}}, and \code{\link{transitP}}.
+#'
 #' @seealso
-#' Methods for fitted objects: \code{\link{MTDest-methods}}.
-#' Model constructor and related utilities: \code{\link{MTDmodel}},
-#' \code{\link{oscillation}}.
-#' Coercion helper: \code{\link{as.MTD}}
+#' \code{\link{MTDmodel}} for constructing an MTD model,
+#' \code{\link{hdMTD}} for lag selection procedures,
+#' \code{\link{MTDest-methods}} for methods specific to fitted objects,
+#' \code{\link{MTD-methods}} for methods inherited from \code{"MTD"},
+#' \code{\link{MTD-accessors}} for stable access to components,
+#' and \code{\link{as.MTD}} for coercion of fits to model objects.
 #'
 #' @export
 #'
 #' @return
-#' An S3 object of class \code{"MTDest"} (a list) with at least the following elements:
+#' An S3 object of class \code{c("MTDest", "MTD")} (a list) with at least the following elements:
 #' \itemize{
 #'   \item \code{lambdas}: estimated mixture weights (independent part first, if any).
 #'   \item \code{pj}: list of estimated transition matrices \eqn{p_j}.
@@ -103,6 +125,7 @@
 #' fit <- MTDest(X, S = c(1, 10), init = init, iter = TRUE)
 #' str(fit, max.level = 1)
 #' fit$logLik
+#' class(fit)
 #'
 #' fit2 <- MTDest(X, S = c(1, 10), init = init, oscillations = TRUE)
 #' fit2$oscillations
@@ -123,7 +146,7 @@ MTDest <- function(X, S, M = 0.01, init, iter = FALSE, nIter = 100, A = NULL, os
       init$p0 <- rep(0, lenA)
     }
   }
-  # Creates an MTD object to validate inputs with checkMTD
+  # Creates an MTD object to validate inputs with checkMTD and computes initial transitP to check if it is compatible with the sample
   initMTD <- MTDmodel(Lambda = S, A = A, lam0 = init$lambdas[1],
                       lamj = init$lambdas[-1], pj = init$pj,
                       p0 = init$p0, indep_part = indep)
@@ -141,7 +164,7 @@ MTDest <- function(X, S, M = 0.01, init, iter = FALSE, nIter = 100, A = NULL, os
   pos <- which(baseSja$Nxa_Sj > 0)
   indexA <- expand.grid(rep(list(seq_len(lenA)), lenS0))[, order(lenS0:1)]
 
-  # Check if initial probabilities are compatible with the sample
+  # Check if initial transitP is compatible with the sample
   Pinit <- t(initMTD$P)
   dim(Pinit) <- NULL
   if(any(round(Pinit, 6) == 0)) {
@@ -299,7 +322,7 @@ MTDest <- function(X, S, M = 0.01, init, iter = FALSE, nIter = 100, A = NULL, os
   out$A    <- A
   out$n    <- lenX
   out$n_eff<- lenX - max(rS)
-  class(out) <- "MTDest"
+  class(out) <- c("MTDest", "MTD")
   out
 }
 

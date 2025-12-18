@@ -4,11 +4,9 @@
 \alias{MTDest-methods}
 \title{Methods for objects of class \code{"MTDest"}}
 \arguments{
-\item{x}{An object of class \code{"MTDest"} or \code{"summary.MTDest"},
-depending on the method.}
+\item{x}{An object of class \code{"MTDest"} (for \code{print.MTDest(x, ...)}).}
 
-\item{object}{An object of class \code{"MTDest"} (used by summary, coef, and
-logLik methods).}
+\item{object}{An object of class \code{"MTDest"}.}
 
 \item{...}{Further arguments passed to or from other methods (ignored).}
 }
@@ -17,40 +15,33 @@ logLik methods).}
 \item{\code{print.MTDest}}{Invisibly returns the \code{"MTDest"} object, after
 displaying its lag set, state space, final log-likelihood, and iteration
 count (if available).}
-\item{\code{print.summary.MTDest}}{Invisibly returns the \code{"summary.MTDest"} object,
-after displaying its contents: lambdas; transition matrices; independent
-distribution; log-likelihood; oscillations (if available); and
-iteration diagnostics (if available).}
-\item{\code{summary.MTDest}}{An object of class \code{"summary.MTDest"}.}
-\item{\code{coef.MTDest}}{A list with estimated \code{lambdas}, \code{pj}, and \code{p0}.}
+\item{\code{summary.MTDest}}{Invisibly returns a named list with fields:
+\code{call}, \code{S}, \code{A}, \code{lambdas}, \code{pj},
+\code{p0} (or \code{NULL}),\code{logLik}, \code{oscillations},
+\code{iterations}, \code{lastComputedDelta} and \code{deltaLogLik}.
+The same information is printed to the console in a readable format.}
 \item{\code{logLik.MTDest}}{ An object of class \code{"logLik"} with attributes
 \code{df} (number of free parameters) and \code{nobs} (effective sample size).}
 }
 }
 \description{
-Printing, summarizing, and extracting information from EM fits of Mixture
-Transition Distribution (MTD) models.
+Methods for objects returned by \code{MTDest()} – EM fits of Mixture Transition
+Distribution models. Note that \code{"MTDest"} objects inherit from class \code{"MTD"}
+(they have class \code{c("MTDest", "MTD")}), and several methods for \code{"MTD"}
+also work on \code{"MTDest"} objects by inheritance. The methods documented
+here are specific to EM fits, providing diagnostics and summaries of the estimation.
 }
 \details{
-These methods handle objects returned by \code{\link{MTDest}} (class \code{"MTDest"}):
+These methods handle objects returned by \code{\link{MTDest}} (class \code{c("MTDest","MTD")}):
 \itemize{
 \item \code{print.MTDest()} displays a compact summary of the fitted model:
 the lag set (\code{S}), the state space (\code{A}), the final
 log-likelihood, and, if available, the number of EM updates performed.
 
-\item \code{summary.MTDest()} collects key components of the object into a
-readable summary list (class \code{"summary.MTDest"}), including lambdas,
-transition matrices, independent distribution (if present), log-likelihood,
-oscillations (if available), and iteration diagnostics.
-
-\item \code{print.summary.MTDest()} prints the summary in a readable format,
-including lambdas, transition matrices, independent distribution,
-log-likelihood, oscillations (if available), and iteration diagnostics
-(if available).
-
-\item \code{coef.MTDest()} extracts the estimated mixture weights
-(\code{lambdas}), the list of transition matrices (\code{pj}), and the
-independent distribution (\code{p0}).
+\item \code{summary.MTDest()} computes and prints a detailed summary of the
+key components of the object, including lambdas, transition matrices,
+independent distribution (if present), log-likelihood, and
+(if available) oscillations and iteration diagnostics.
 
 \item \code{logLik.MTDest()} returns the log-likelihood as an object of class
 \code{"logLik"}, with attributes \code{df} (number of free parameters
@@ -73,12 +64,13 @@ init <- list(
 fit <- MTDest(X, S = c(1, 3), init = init, iter = TRUE)
 print(fit)
 summary(fit)
-coef(fit)
+coef(fit) # Works by inheritance
 logLik(fit)
 BIC(fit)
 }
 
 }
 \seealso{
-\code{\link{MTDest}}, \code{\link{as.MTD}}
+\code{\link{MTDest}}, \code{\link{as.MTD}}, \code{\link{MTD-methods}},
+\code{\link{oscillation}}, \code{\link{perfectSample}}, \code{\link{probs}}
 }

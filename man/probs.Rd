@@ -2,15 +2,9 @@
 % Please edit documentation in R/probs.R
 \name{probs}
 \alias{probs}
-\alias{probs.MTD}
-\alias{probs.MTDest}
 \title{Predictive probabilities for MTD / MTDest}
 \usage{
 probs(object, context = NULL, newdata = NULL, oldLeft = FALSE)
-
-\method{probs}{MTD}(object, context = NULL, newdata = NULL, oldLeft = FALSE)
-
-\method{probs}{MTDest}(object, context = NULL, newdata = NULL, oldLeft = FALSE)
 }
 \arguments{
 \item{object}{An \code{MTD} or \code{MTDest} object.}
@@ -18,42 +12,42 @@ probs(object, context = NULL, newdata = NULL, oldLeft = FALSE)
 \item{context}{Optional vector or matrix/data.frame of contexts (rows). By default,
 each row follows the "most recent first" convention; set \code{oldLeft = TRUE} if rows
 are supplied oldest to newest. Must have exactly \code{length(Lambda(object))} columns
-for \code{MTD} or \code{length(S(object))} for \code{MTDest} (one symbol per lag).}
+(one symbol per lag).}
 
 \item{newdata}{Optional vector or matrix/data.frame of samples (rows). Columns follow
-the "most recent first" convention. Must have at least \code{max(Lambda(object))} columns
-for \code{MTD} or \code{max(S(object))} for \code{MTDest}. Only one of \code{newdata} or \code{context}
-can be provided at a time. When there are extra columns, only the columns at the
-model lags are used.}
+the "most recent first" convention. Must have at least \code{max(Lambda(object))}
+columns. Only one of \code{newdata} or \code{context} can be provided at a time. When
+there are extra columns, only the columns at the model lags are used.}
 
 \item{oldLeft}{Logical. If \code{TRUE}, interpret rows in \code{newdata}/\code{context} as
 oldest to newest (e.g. leftmost = \code{newdata[ ,1]} = oldest). If \code{FALSE} (default),
 rows are most recent first.}
 }
 \value{
-A numeric matrix of predictive probabilities with one row per input context and
-columns indexed by \code{states(object)}. Row names are the context labels (oldest to newest)
-formed by concatenating state symbols without a separator. If both \code{newdata} and
-\code{context} are missing, the full global transition matrix is returned.
+A numeric matrix of predictive probabilities with one row per input
+context and columns indexed by \code{states(object)}. Row names are the context
+labels (oldest to newest) formed by concatenating state symbols without a
+separator. If both \code{newdata} and \code{context} are missing, the full global
+transition matrix is returned, which can be large for big state spaces or many lags.
 }
 \description{
-Compute one-step-ahead predictive probabilities under an MTD model or an MTDest fit.
+Compute one-step-ahead predictive probabilities under an MTD model or an
+MTDest fit. For objects of class "MTDest", the method is inherited from
+the "MTD" class via S3 inheritance.
 
 Conventions:
 \itemize{
 \item Samples are read most recent first: \verb{x[1] = X_\{t-1\}}, \verb{x[2] = X_\{t-2\}}, etc.
-\item The global transition matrix \code{P} is indexed by row labels that list the past
-context from oldest to newest. A cell at row \code{"s_k...s_1"} and column \code{"a"}
-is read as \code{p(a | s_1...s_k)}.
+\item The global transition matrix \code{P} (or transitP) is indexed by row labels that
+list the past context from oldest to newest. A cell at row \code{"s_k...s_1"} and
+column \code{"a"} is read as \code{p(a | s_1...s_k)}.
 \item If both \code{newdata} and \code{context} are missing, \code{probs()} returns the full
-global transition matrix (\code{transitP(object)} for \code{MTD}; \code{transitP(as.MTD(object))}
-for \code{MTDest}).
+global transition matrix (\code{transitP(object)}).
 }
 }
 \details{
-All entries of \code{newdata}/\code{context} must belong to the model's state space \code{states(object)}.
-For \code{MTDest}, returning the full matrix materializes \code{transitP(as.MTD(object))}, which can be
-large for big state spaces or many lags.
+All entries of \code{newdata}/\code{context} must belong to the model's state space
+\code{states(object)}.
 }
 \examples{
 set.seed(1)
@@ -77,5 +71,5 @@ probs(m, newdata = ctxs)
 }
 \seealso{
 \code{\link{transitP}}, \code{\link{states}}, \code{\link{Lambda}},
-\code{\link{S}}, \code{\link{as.MTD}}, \code{\link{empirical_probs}}
+\code{\link{empirical_probs}}, \code{\link{MTDmodel}}, \code{\link{MTDest}}
 }

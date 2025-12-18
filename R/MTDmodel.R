@@ -20,9 +20,38 @@
 #' @param indep_part Logical. If \code{FALSE}, the model does not include an independent distribution
 #' and \code{p0} is set to zero.
 #'
-#' @details The resulting MTD object can be used by functions such as [oscillation()], which retrieves the
-#'  model's oscillation, and [perfectSample()], which will sample an MTD Markov chain from its invariant
-#'  distribution.
+#' @section Methods (S3):
+#' Objects returned by \code{MTDmodel()} have class \code{"MTD"} and support:
+#' \itemize{
+#'   \item \code{\link[base]{print}}: compact display of the relevant lag set and
+#'    the state space (see \code{\link{MTD-methods}}).
+#'   \item \code{\link[base]{summary}}: detailed summary of the model components
+#'   (see \code{\link{MTD-methods}}).
+#'   \item \code{\link[stats]{coef}}: extracts the model parameters \code{lambdas},
+#'    \code{pj}, and \code{p0} (see \code{\link{MTD-methods}}).
+#'   \item \code{\link[stats]{logLik}}: \code{logLik(object, X)} computes the
+#'   log-likelihood, provided that the user supplies a sample \code{X} (see \code{\link{MTD-methods}}).
+#'   \item \code{\link[graphics]{plot}}: diagnostic plots, including oscillations by lag, mixture weights,
+#'         and transition graphs (see \code{\link{plot.MTD}}).
+#'   \item \code{\link{oscillation}}: oscillations by lag computed from the model parameters.
+#'   \item \code{\link{perfectSample}}: perfect sampling from the stationary distribution, provided that
+#'         \eqn{\lambda_0 > 0}.
+#'   \item \code{\link{probs}}: one-step predictive probabilities.
+#' }
+#'
+#' @section Accessors:
+#' Stable access to model components is provided by \code{\link{MTD-accessors}}:
+#' \code{\link{lags}}, \code{\link{Lambda}}, \code{\link{lambdas}}, \code{\link{pj}},
+#' \code{\link{p0}}, \code{\link{states}}, and \code{\link{transitP}}.
+#'
+#' @seealso
+#' \code{\link{MTDest}} for EM-based parameter estimation,
+#' \code{\link{hdMTD}} for lag selection procedures,
+#' \code{\link{MTD-methods}} for methods applicable to \code{"MTD"} objects,
+#' \code{\link{MTD-accessors}} for stable access to model components,
+#' \code{\link{oscillation}}, \code{\link{perfectSample}}, and \code{\link{probs}}
+#' for additional inference and simulation utilities.
+#'
 #'
 #' @return A list of class \code{MTD} containing:
 #' \describe{
@@ -39,15 +68,17 @@
 #' @export
 #'
 #' @examples
-#' summary(MTDmodel(Lambda=c(1,3),A=c(4,8,12)))
+#' summary(MTDmodel(Lambda = c(1, 3), A = c(4, 8, 12)))
 #'
-#' MM <- MTDmodel(Lambda=c(2,4,9),A=c(0,1),lam0=0.05,lamj=c(0.35,0.2,0.4),
-#' pj=list(matrix(c(0.5,0.7,0.5,0.3),ncol=2)),p0=c(0.2,0.8),single_matrix=TRUE)
+#' MM <- MTDmodel(Lambda = c(2, 4, 9), A = c(0, 1), lam0 = 0.05,
+#'  lamj = c(0.35, 0.2, 0.4), pj = list(matrix(c(0.5, 0.7, 0.5, 0.3), ncol = 2)),
+#'  p0 = c(0.2, 0.8), single_matrix = TRUE)
 #' transitP(MM); pj(MM); oscillation(MM)
 #'
 #'
-#' MM <- MTDmodel(Lambda=c(2,4,9),A=c(0,1),lam0=0.05,
-#' pj=list(matrix(c(0.5,0.7,0.5,0.3),ncol=2)),single_matrix=TRUE,indep_part=FALSE)
+#' MM <- MTDmodel(Lambda = c(2, 4, 9), A = c(0, 1), lam0 = 0.05,
+#'  pj = list(matrix(c(0.5, 0.7, 0.5, 0.3), ncol = 2)), single_matrix = TRUE,
+#'  indep_part = FALSE)
 #' p0(MM); lambdas(MM)
 #'
 MTDmodel <- function(Lambda, A, lam0 = NULL, lamj = NULL, pj = NULL, p0 = NULL,
@@ -68,7 +99,6 @@ MTDmodel <- function(Lambda, A, lam0 = NULL, lamj = NULL, pj = NULL, p0 = NULL,
 
     lenA <- length(A)
     lenL <- length(Lambda)
-    lenAL <- lenA^lenL
 
     # If the user provides p0 as a zero vector, automatically set indep_part to FALSE
     if (!is.null(p0) && all(p0 == 0) && indep_part) {
@@ -146,38 +176,8 @@ MTDmodel <- function(Lambda, A, lam0 = NULL, lamj = NULL, pj = NULL, p0 = NULL,
     }
     names(pj) <- paste0("p-",Lambda)
 
-    # Calculating P (the transition matrix)
-
-    # Generate all possible size lenL sequences with digits from 1 to lenA
-    subx <- try(expand.grid(rep(list(seq_len(lenA)), lenL)), silent = TRUE)
-    if(inherits(subx,"try-error")) {
-        stop(paste0("For length(Lambda)=",lenL," the dataset with all pasts sequences (x of length(Lambda)) with elements of A is too large."))
-    }
-    subx <- subx[, order(lenL:1)]
-
-    P <- matrix(0, ncol = lenA, nrow = lenAL)
-
-    if (lenL == 1) {
-        for (i in seq_len(lenAL)) { # runs in all lines of P
-            P[i, ] <- lambdas %*% rbind(p0, pj[[1]][i, ])
-        }
-        rownames(P) <- A
-    } else {
-        for (i in seq_len(lenAL)) {
-            aux <- matrix(0, ncol = lenA, nrow = lenL)
-            for (j in seq_len(lenL)) {
-                aux[j, ] <- pj[[j]][subx[i, (lenL + 1 - j)], ]
-                # The lines in aux are each from a different pj
-            }
-            P[i, ] <- lambdas %*% rbind(p0, aux)
-        }
-    }
-    colnames(P) <- A
-    if(lenL > 1){
-        subx <- as.matrix(expand.grid(rep(list(A), lenL))) # Elements from A
-        subx <- subx[, order(lenL:1)]
-        rownames(P) <- apply(subx, 1, paste0, collapse = "")
-    }
+    # Calculating P (the global transition matrix of the MTD)
+    P <- compute_transitP(Lambda, A, lambdas, pj, p0) # see utils.R
 
     MTD <- list(
       P = P, lambdas = lambdas, pj = pj, p0 = p0,

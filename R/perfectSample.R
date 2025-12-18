@@ -3,9 +3,9 @@
 #' Samples an MTD Markov Chain from the stationary distribution.
 #'
 #' @name perfectSample
-#' @param object An object of class "MTD", see [MTDmodel()] for properly generating
+#' @param object An object of class "MTD" or "MTDest".
+#' @param N Positive integer. Sample size to generate. Must be > max(Lambda(object)).
 #' @param ... Additional arguments passed to methods.
-#' an MTD object.
 #'
 #' @return Returns a size N sample from an MTD model (the first element is the most recent).
 #'
@@ -21,13 +21,12 @@
 #' perfectSample(M, N = 300)
 #'
 #' @export
-perfectSample <- function(object, ...){
+perfectSample <- function(object, N, ...){
   UseMethod("perfectSample")
 }
 
-#' @rdname perfectSample
-#' @param N Positive integer. Sample size to generate. Must be > max(Lambda(object)).
-#' @export
+#' @exportS3Method perfectSample MTD
+#' @noRd
 perfectSample.MTD <- function(object, N, ...) {
 
   # Validate inputs
